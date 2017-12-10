@@ -6,6 +6,7 @@ apply { plugin("kotlin") }
 jvmTarget = "1.6"
 
 val androidSdk by configurations.creating
+val androidJar by configurations.creating
 
 dependencies {
     compile(project(":compiler:util"))
@@ -55,6 +56,7 @@ dependencies {
     testRuntime(intellijPluginDep("android"))
 
     androidSdk(project(":custom-dependencies:android-sdk", configuration = "androidSdk"))
+    androidJar(project(":custom-dependencies:android-sdk", configuration = "androidJar"))
 }
 
 sourceSets {
@@ -70,6 +72,7 @@ projectTest {
     workingDir = rootDir
     doFirst {
         systemProperty("android.sdk", androidSdk.singleFile.canonicalPath)
+        systemProperty("android.jar", androidJar.singleFile.canonicalPath)
     }
 }
 
