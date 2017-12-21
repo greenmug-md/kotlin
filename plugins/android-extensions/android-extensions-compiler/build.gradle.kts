@@ -7,6 +7,8 @@ val robolectricClasspath by configurations.creating
 val androidJar by configurations.creating
 
 dependencies {
+    testCompile(intellijCoreDep()) { includeJars("intellij-core") }
+
     compile(project(":compiler:util"))
     compile(project(":compiler:plugin-api"))
     compile(project(":compiler:frontend"))
@@ -24,7 +26,6 @@ dependencies {
     testCompile(projectTests(":compiler:tests-common"))
     testCompile(projectDist(":kotlin-test:kotlin-test-jvm"))
     testCompile(commonDep("junit:junit"))
-    testCompile(intellijCoreDep()) { includeJars("intellij-core") }
 
     testRuntime(intellijPluginDep("junit")) { includeJars("idea-junit", "resources_en") }
 
