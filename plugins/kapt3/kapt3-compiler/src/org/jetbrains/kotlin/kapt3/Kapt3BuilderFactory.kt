@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.org.objectweb.asm.*
 import org.jetbrains.org.objectweb.asm.tree.*
 
-internal class Kapt3BuilderFactory : ClassBuilderFactory {
+class Kapt3BuilderFactory : ClassBuilderFactory {
     internal val compiledClasses = mutableListOf<ClassNode>()
     internal val origins = mutableMapOf<Any, JvmDeclarationOrigin>()
 
