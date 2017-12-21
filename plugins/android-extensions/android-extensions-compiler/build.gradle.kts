@@ -24,6 +24,7 @@ dependencies {
     testCompile(projectTests(":compiler:tests-common"))
     testCompile(projectDist(":kotlin-test:kotlin-test-jvm"))
     testCompile(commonDep("junit:junit"))
+    testCompile(intellijCoreDep()) { includeJars("intellij-core") }
 
     testRuntime(intellijPluginDep("junit")) { includeJars("idea-junit", "resources_en") }
 
