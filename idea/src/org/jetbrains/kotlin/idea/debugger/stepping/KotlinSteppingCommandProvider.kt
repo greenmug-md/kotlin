@@ -37,7 +37,6 @@ import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.caches.resolve.unsafeResolveToDescriptor
-import org.jetbrains.kotlin.idea.codeInsight.CodeInsightUtils
 import org.jetbrains.kotlin.idea.debugger.*
 import org.jetbrains.kotlin.idea.debugger.stepping.DexBytecode.GOTO
 import org.jetbrains.kotlin.idea.debugger.stepping.DexBytecode.MOVE
@@ -50,10 +49,8 @@ import org.jetbrains.kotlin.idea.refactoring.getLineStartOffset
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.psi.psiUtil.endOffset
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.psi.psiUtil.parents
-import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.resolve.calls.callUtil.getResolvedCall
 import org.jetbrains.kotlin.resolve.calls.model.VariableAsFunctionResolvedCallImpl
 import org.jetbrains.kotlin.resolve.inline.InlineUtil
@@ -235,38 +232,7 @@ private fun findCallsOnPosition(sourcePosition: SourcePosition, filter: (KtCallE
     val file = sourcePosition.file as? KtFile ?: return emptyList()
     val lineNumber = sourcePosition.line
 
-    val lineElement = findElementAtLine(file, lineNumber)
-
-    if (lineElement !is KtElement) {
-        if (lineElement != null) {
-            val call = findCallByEndToken(lineElement)
-            if (call != null && filter(call)) {
-                return listOf(call)
-            }
-        }
-
-        return emptyList()
-    }
-
-    val start = lineElement.startOffset
-    val end = lineElement.endOffset
-
-    val allFilteredCalls = CodeInsightUtils.
-            findElementsOfClassInRange(file, start, end, KtExpression::class.java)
-            .map { KtPsiUtil.getParentCallIfPresent(it as KtExpression) }
-            .filterIsInstance<KtCallExpression>()
-            .filter { filter(it) }
-            .toSet()
-
-    // It is necessary to check range because of multiline assign
-    var linesRange = lineNumber..lineNumber
-    return allFilteredCalls.filter {
-        val shouldInclude = it.getLineNumber() in linesRange
-        if (shouldInclude) {
-            linesRange = Math.min(linesRange.start, it.getLineNumber())..Math.max(linesRange.endInclusive, it.getLineNumber(false))
-        }
-        shouldInclude
-    }
+    return findCallsInLine(file, lineNumber, filter)
 }
 
 sealed class Action(val position: XSourcePositionImpl? = null,

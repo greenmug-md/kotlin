@@ -30,11 +30,14 @@ import org.jetbrains.kotlin.codegen.coroutines.DO_RESUME_METHOD_NAME
 import org.jetbrains.kotlin.idea.codeInsight.CodeInsightUtils
 import org.jetbrains.kotlin.idea.debugger.evaluate.KotlinDebuggerCaches
 import org.jetbrains.kotlin.idea.refactoring.getLineEndOffset
+import org.jetbrains.kotlin.idea.refactoring.getLineNumber
 import org.jetbrains.kotlin.idea.refactoring.getLineStartOffset
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.endOffset
+import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.inline.InlineUtil
 import java.util.*
@@ -216,6 +219,41 @@ fun findElementAtLine(file: KtFile, line: Int): PsiElement? {
     }
 
     return topMostElement
+}
+
+fun findCallsInLine(file: KtFile, lineNumber: Int, filter: (KtCallExpression) -> Boolean): List<KtCallExpression> {
+    val lineElement = findElementAtLine(file, lineNumber)
+
+    if (lineElement !is KtElement) {
+        if (lineElement != null) {
+            val call = findCallByEndToken(lineElement)
+            if (call != null && filter(call)) {
+                return listOf(call)
+            }
+        }
+
+        return emptyList()
+    }
+
+    val start = lineElement.startOffset
+    val end = lineElement.endOffset
+
+    val allFilteredCalls = CodeInsightUtils.
+            findElementsOfClassInRange(file, start, end, KtExpression::class.java)
+            .map { KtPsiUtil.getParentCallIfPresent(it as KtExpression) }
+            .filterIsInstance<KtCallExpression>()
+            .filter { filter(it) }
+            .toSet()
+
+    // It is necessary to check range because of multiline assign
+    var linesRange = lineNumber..lineNumber
+    return allFilteredCalls.filter {
+        val shouldInclude = it.getLineNumber() in linesRange
+        if (shouldInclude) {
+            linesRange = Math.min(linesRange.start, it.getLineNumber())..Math.max(linesRange.endInclusive, it.getLineNumber(false))
+        }
+        shouldInclude
+    }
 }
 
 fun findCallByEndToken(element: PsiElement): KtCallExpression? {
