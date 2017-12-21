@@ -688,19 +688,28 @@ private fun allSuspensionPointsAreTailCalls(
     val sourceFrames = MethodTransformer.analyze(thisName, methodNode, IgnoringCopyOperationSourceInterpreter())
 
     val instructions = methodNode.instructions
-    return suspensionPoints.all { suspensionPoint ->
+    for (suspensionPoint in suspensionPoints) {
         val beginIndex = instructions.indexOf(suspensionPoint.suspensionCallBegin)
         val endIndex = instructions.indexOf(suspensionPoint.suspensionCallEnd)
 
-        safelyReachableReturns[endIndex + 1]?.all { returnIndex ->
+        val endReturns = safelyReachableReturns[endIndex + 1] ?: return false
+
+        for (returnIndex in endReturns) {
             val sourceInsn =
                     sourceFrames[returnIndex].top().sure {
                         "There must be some value on stack to return"
-                    }.insns.singleOrNull()
+                    }.insns.singleOrNull() ?: return false
 
-            sourceInsn?.let(instructions::indexOf) in beginIndex..endIndex
-        } ?: false
+            val sourceInsnIndex = instructions.indexOf(sourceInsn)
+            val sourceReturns = safelyReachableReturns[sourceInsnIndex] ?: emptySet()
+
+            // In case of try catch we have more reachable returns on source than on return.
+            // In this case, disable tail call optimization.
+            if (sourceReturns.size > endReturns.size) return false
+            if (sourceInsnIndex !in beginIndex..endIndex) return false
+        }
     }
+    return true
 }
 
 internal class IgnoringCopyOperationSourceInterpreter : SourceInterpreter() {
@@ -740,14 +749,12 @@ private fun findSafelyReachableReturns(methodNode: MethodNode): Array<Set<Int>?>
         for (index in 0 until insns.size()) {
             if (insns[index].opcode == Opcodes.ARETURN) continue
 
-            @Suppress("RemoveExplicitTypeArguments")
-            val newResult =
-                    controlFlowGraph
-                            .getSuccessorsIndices(index).plus(index)
-                            .map(reachableReturnsIndices::get)
-                            .fold<Set<Int>?, Set<Int>?>(mutableSetOf<Int>()) { acc, successorsResult ->
-                                if (acc != null && successorsResult != null) acc + successorsResult else null
-                            }
+            val successorsIndices = controlFlowGraph.getSuccessorsIndices(index) + index
+            val newResult = mutableSetOf<Int>()
+            for (i in successorsIndices) {
+                val returnIndices = reachableReturnsIndices[i]
+                if (returnIndices != null) newResult.addAll(returnIndices)
+            }
 
             if (newResult != reachableReturnsIndices[index]) {
                 reachableReturnsIndices[index] = newResult
