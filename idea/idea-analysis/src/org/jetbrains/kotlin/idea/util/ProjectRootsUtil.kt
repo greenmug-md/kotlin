@@ -35,6 +35,7 @@ import com.intellij.psi.PsiFileSystemItem
 import org.jetbrains.kotlin.idea.KotlinModuleFileType
 import org.jetbrains.kotlin.idea.core.script.ScriptDependenciesManager
 import org.jetbrains.kotlin.idea.decompiler.builtIns.KotlinBuiltInFileType
+import org.jetbrains.kotlin.idea.decompiler.js.KotlinJavaScriptMetaFileType
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 
 abstract class KotlinBinaryExtension(val fileType: FileType) {
@@ -51,6 +52,7 @@ abstract class KotlinBinaryExtension(val fileType: FileType) {
 class JavaClassBinary: KotlinBinaryExtension(JavaClassFileType.INSTANCE)
 class KotlinBuiltInBinary: KotlinBinaryExtension(KotlinBuiltInFileType)
 class KotlinModuleBinary: KotlinBinaryExtension(KotlinModuleFileType.INSTANCE)
+class KotlinJsMetaBinary: KotlinBinaryExtension(KotlinJavaScriptMetaFileType)
 
 fun FileType.isKotlinBinary(): Boolean = this in KotlinBinaryExtension.kotlinBinaries
 
