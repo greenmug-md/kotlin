@@ -74,7 +74,7 @@ dependencies {
     (rootProject.extra["compilerModules"] as Array<String>).forEach {
         testCompile(project(it))
     }
-    testCompileOnly(intellijCoreDep()) { includeJars("intellij-core") }
+    nly(intellijCoreDep()) { includeJars("intellij-core") }
     testCompile(intellijPluginDep("IntelliLang"))
     testCompile(intellijPluginDep("copyright"))
     testCompile(intellijPluginDep("properties"))
