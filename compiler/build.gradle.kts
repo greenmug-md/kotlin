@@ -55,7 +55,7 @@ dependencies {
     otherCompilerModules.forEach {
         testCompileOnly(project(it))
     }
-    testCompileOnly(intellijCoreDep()) { includeJars("intellij-core") }
+    testCompile(intellijCoreDep()) { includeJars("intellij-core") }
     testCompileOnly(intellijDep()) { includeJars("openapi", "idea", "idea_rt", "util", "asm-all") }
 
     testRuntime(projectDist(":kotlin-reflect"))
